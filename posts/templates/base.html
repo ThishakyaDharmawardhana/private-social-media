@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Private Social Media{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" role="presentation">
+                <defs>
+                    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00D9FF" />
+                        <stop offset="100%" stop-color="#0083B0" />
+                    </linearGradient>
+                    <linearGradient id="brandGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.7)" />
+                        <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+                    </linearGradient>
+                </defs>
+                <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#brandGrad)" />
+                <path d="M18 40 L26 22 L34 36 L42 22 L50 40" fill="none" stroke="#0b1c2c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="32" cy="42" r="5" fill="#0b1c2c" />
+                <circle cx="22" cy="18" r="6" fill="url(#brandGlow)" />
+            </svg>
+        </div>
+        <div class="brand-text">MySpace</div>
+    </div>
+    <div class="nav-links">
+        
+        {% if request.user.is_authenticated %}
+            <span class="nav-user"><h2>👋 Hi, {{ request.user.username }}</h2></span>
+            <a href="/" class="nav-link">🏠 Feed</a>
+            <a href="/add/" class="nav-link-primary">➕ Create Post</a>
+            <a href="/logout/" class="nav-link">🚪 Logout</a>
+        {% else %}
+            <a href="/" class="nav-link">🏠 Feed</a>
+            <a href="/login/" class="nav-link-primary">🔐 Login</a>
+        {% endif %}
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+    </div>
+</nav>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+// Dark/Light Mode Toggle
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+const currentTheme = localStorage.getItem('theme') || 'light';
+
+if (currentTheme === 'dark') {
+    body.classList.add('dark-mode');
+    themeToggle.textContent = '☀️';
+}
+
+themeToggle.addEventListener('click', () => {
+    body.classList.toggle('dark-mode');
+    const isDark = body.classList.contains('dark-mode');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+</script>
+
+</body>
+</html>

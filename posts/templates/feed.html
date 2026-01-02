@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Feed - MySpace{% endblock %}
+
+{% block content %}
+<div class="feed-header">
+    <h1>✨ My Feed</h1>
+    <p class="feed-subtitle">A Digital Hideout for Everything I Want to Remember</p>
+</div>
+
+<!-- Filters and Category Management -->
+<div class="filter-panel">
+    <form method="GET" class="filters-form">
+        <div class="filter-controls">
+            <select name="category" class="filter-select" onchange="this.form.submit()">
+                <option value="">📋 All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.icon }} {{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="year" class="filter-select" onchange="this.form.submit()">
+                <option value="">📅 All Years</option>
+                {% for year in available_years %}
+                <option value="{{ year }}" {% if selected_year == year|stringformat:'s' %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="view" class="filter-select" onchange="this.form.submit()">
+                <option value="feed" {% if view_type == 'feed' %}selected{% endif %}>📱 Feed View</option>
+                <option value="timeline" {% if view_type == 'timeline' %}selected{% endif %}>📅 Timeline View</option>
+            </select>
+
+            {% if view_type == 'timeline' %}
+            <select name="group" class="filter-select" onchange="this.form.submit()">
+                <option value="day" {% if group_by == 'day' %}selected{% endif %}>📆 Group by Day</option>
+                <option value="month" {% if group_by == 'month' %}selected{% endif %}>📅 Group by Month</option>
+                <option value="year" {% if group_by == 'year' %}selected{% endif %}>📊 Group by Year</option>
+            </select>
+            {% endif %}
+        </div>
+
+        {% if selected_category or selected_year or view_type == 'timeline' %}
+        <a href="/" class="clear-filters-btn">✕ Clear</a>
+        {% endif %}
+    </form>
+
+    {% if request.user.is_authenticated %}
+    <form method="POST" action="{% url 'add_category' %}" class="category-add-form">
+        {% csrf_token %}
+        <div class="category-add-fields">
+            <input type="text" name="name" class="text-input" placeholder="Add a new category (e.g., Travels)" required>
+            <button type="submit" class="search-btn category-save-btn">➕ Save Category</button>
+
+            <div class="icon-picker">
+                <label class="icon-option"><input type="radio" name="icon" value="🎓" checked> 🎓 University</label>
+                <label class="icon-option"><input type="radio" name="icon" value="🎨"> 🎨 Hobby</label>
+                <label class="icon-option"><input type="radio" name="icon" value="🏆"> 🏆 Achievements</label>
+                <label class="icon-option"><input type="radio" name="icon" value="👨‍👩‍👧"> 👨‍👩‍👧 Family</label>
+                <label class="icon-option"><input type="radio" name="icon" value="✈️"> ✈️ Travels</label>
+                <label class="icon-option"><input type="radio" name="icon" value="😊"> 😊 Myself</label>
+            </div>
+           
+    </form>
+    {% endif %}
+</div>
+
+<!-- Category Filter Chips (only shown in feed view) -->
+{% if view_type == 'feed' %}
+<div class="category-filter">
+    <a href="/" class="category-chip {% if not selected_category %}active{% endif %}">📋 All</a>
+    {% for category in categories %}
+    <a href="?category={{ category.id }}{% if selected_year %}&year={{ selected_year }}{% endif %}" class="category-chip {% if selected_category == category.id|stringformat:'s' %}active{% endif %}">{{ category.icon }} {{ category.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- FEED VIEW -->
+{% if view_type == 'feed' %}
+    {% for post in posts %}
+    <article class="post-card">
+        <div class="post-header">
+            <div class="post-header-top">
+                <p class="post-caption">{{ post.caption }}</p>
+                {% if post.category %}
+                <span class="post-category-badge">{{ post.category.icon }} {{ post.category.name }}</span>
+                {% endif %}
+            </div>
+            <small class="post-time">🕐 {{ post.created_at|timesince }} ago</small>
+        </div>
+
+        {% if post.video %}
+        <div class="post-media-wrapper">
+            <video controls preload="metadata" class="post-video">
+                <source src="{{ post.video.url }}" type="video/mp4">
+                <source src="{{ post.video.url }}" type="video/webm">
+                <source src="{{ post.video.url }}" type="video/ogg">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        {% elif post.image %}
+        <div class="post-media-wrapper">
+            <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+        </div>
+        {% endif %}
+
+        <div class="post-footer">
+            {% if request.user.is_authenticated %}
+            <div class="post-reactions">
+                <form method="POST" action="{% url 'toggle_like' post.id %}">
+                    {% csrf_token %}
+                    <button class="chip {% if request.user in post.likes.all %}active{% endif %}" type="submit">❤️ {{ post.likes.count }}</button>
+                </form>
+                <form method="POST" action="{% url 'toggle_favorite' post.id %}">
+                    {% csrf_token %}
+                    <button class="chip {% if request.user in post.favorites.all %}active{% endif %}" type="submit">⭐ {{ post.favorites.count }}</button>
+                </form>
+            </div>
+            <div class="post-manage">
+                <a class="action-link" href="{% url 'edit_post' post.id %}">✏️ Edit</a>
+                <form method="POST" action="{% url 'delete_post' post.id %}">
+                    {% csrf_token %}
+                    <button class="action-link danger" type="submit" onclick="return confirm('Delete this post?');">🗑️ Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h2>No posts found!</h2>
+        <p>{% if selected_category or selected_year %}Try adjusting your filters.{% else %}Be the first to share something amazing.{% endif %}</p>
+        <a href="/add/" class="cta-button">Create Your First Post</a>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- TIMELINE VIEW -->
+{% if view_type == 'timeline' %}
+    {% if grouped_posts %}
+        {% for group_name, group_posts in grouped_posts %}
+        <div class="timeline-section">
+            <div class="timeline-header">
+                {% if group_by == 'day' %}
+                    📆 {{ group_name }}
+                {% elif group_by == 'month' %}
+                    📅 {{ group_name }}
+                {% else %}
+                    📊 Year {{ group_name }}
+                {% endif %}
+            </div>
+
+            <div class="timeline-posts">
+                {% for post in group_posts %}
+                <article class="post-card timeline-card">
+                    <div class="post-header">
+                        <div class="post-header-top">
+                            <p class="post-caption">{{ post.caption }}</p>
+                            {% if post.category %}
+                            <span class="post-category-badge">{{ post.category.icon }} {{ post.category.name }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="post-time">🕐 {{ post.created_at|date:"M d, Y - H:i" }}</small>
+                    </div>
+
+                    {% if post.video %}
+                    <div class="post-media-wrapper">
+                        <video controls preload="metadata" class="post-video">
+                            <source src="{{ post.video.url }}" type="video/mp4">
+                            <source src="{{ post.video.url }}" type="video/webm">
+                            <source src="{{ post.video.url }}" type="video/ogg">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    {% elif post.image %}
+                    <div class="post-media-wrapper">
+                        <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+                    </div>
+                    {% endif %}
+
+                    <div class="post-footer">
+                        {% if request.user.is_authenticated %}
+                        <div class="post-reactions">
+                            <form method="POST" action="{% url 'toggle_like' post.id %}">
+                                {% csrf_token %}
+                                <button class="chip {% if request.user in post.likes.all %}active{% endif %}" type="submit">❤️ {{ post.likes.count }}</button>
+                            </form>
+                            <form method="POST" action="{% url 'toggle_favorite' post.id %}">
+                                {% csrf_token %}
+                                <button class="chip {% if request.user in post.favorites.all %}active{% endif %}" type="submit">⭐ {{ post.favorites.count }}</button>
+                            </form>
+                        </div>
+                        <div class="post-manage">
+                            <a class="action-link" href="{% url 'edit_post' post.id %}">✏️ Edit</a>
+                            <form method="POST" action="{% url 'delete_post' post.id %}">
+                                {% csrf_token %}
+                                <button class="action-link danger" type="submit" onclick="return confirm('Delete this post?');">🗑️ Delete</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h2>No posts found!</h2>
+            <p>{% if selected_category or selected_year %}Try adjusting your filters.{% else %}Be the first to share something amazing.{% endif %}</p>
+            <a href="/add/" class="cta-button">Create Your First Post</a>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

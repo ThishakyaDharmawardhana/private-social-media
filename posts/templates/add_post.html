@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Post - MySpace{% endblock %}
+
+{% block content %}
+<div class="form-header">
+    <h1>✍️ Create a New Post</h1>
+    <p class="form-subtitle">Share what's on your mind</p>
+</div>
+
+<div class="post-form">
+    <form method="POST" enctype="multipart/form-data" id="postForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="caption">Caption</label>
+            <textarea 
+                name="caption" 
+                id="caption"
+                placeholder="What's on your mind? Share your thoughts..."
+                required
+                maxlength="5000"
+            ></textarea>
+            <span class="char-count">0 / 5000</span>
+        </div>
+        
+        <div class="form-group">
+            <label for="category">Category (Optional)</label>
+            <select name="category" id="category" class="select-input">
+                <option value="">-- Select Category --</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="image">Photo (Optional)</label>
+            <div class="file-input-wrapper">
+                <input 
+                    type="file" 
+                    name="image" 
+                    id="image"
+                    accept="image/*"
+                >
+                <label for="image" class="file-label">
+                    <span class="file-icon">📷</span>
+                    <span class="file-text">Choose an image or drag & drop</span>
+                </label>
+                <div class="image-preview" id="imagePreview"></div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="video">Video (Optional)</label>
+            <div class="file-input-wrapper">
+                <input 
+                    type="file" 
+                    name="video" 
+                    id="video"
+                    accept="video/*"
+                >
+                <label for="video" class="file-label">
+                    <span class="file-icon">🎥</span>
+                    <span class="file-text">Choose a video or drag & drop</span>
+                </label>
+                <div class="video-preview" id="videoPreview"></div>
+            </div>
+            <small class="form-hint">⚠️ You can upload either a photo or video, not both</small>
+        </div>
+        
+        <div class="form-actions">
+            <a href="/" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-submit">📤 Publish Post</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Character counter
+const textarea = document.getElementById('caption');
+const charCount = document.querySelector('.char-count');
+textarea.addEventListener('input', function() {
+    charCount.textContent = this.value.length + ' / 5000';
+});
+
+// Image preview
+const imageInput = document.getElementById('image');
+const imagePreview = document.getElementById('imagePreview');
+const imageFileText = document.querySelector('.file-input-wrapper:nth-of-type(1) .file-text');
+
+imageInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        // Clear video input
+        document.getElementById('video').value = '';
+        document.getElementById('videoPreview').innerHTML = '';
+        document.getElementById('videoPreview').style.display = 'none';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            imagePreview.style.display = 'block';
+            imageFileText.textContent = file.name;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Video preview
+const videoInput = document.getElementById('video');
+const videoPreview = document.getElementById('videoPreview');
+const videoFileText = document.querySelector('.file-input-wrapper:nth-of-type(2) .file-text');
+
+videoInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        // Clear image input
+        document.getElementById('image').value = '';
+        document.getElementById('imagePreview').innerHTML = '';
+        document.getElementById('imagePreview').style.display = 'none';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            videoPreview.innerHTML = `<video controls><source src="${e.target.result}" type="${file.type}">Your browser does not support the video tag.</video>`;
+            videoPreview.style.display = 'block';
+            videoFileText.textContent = file.name;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

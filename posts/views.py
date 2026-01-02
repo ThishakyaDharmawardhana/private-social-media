@@ -25,8 +25,11 @@ def feed(request):
     available_years = sorted({post.created_at.year for post in all_posts}, reverse=True)
 
     grouped_posts = None
+    grouped_feed = None
     if view_type == 'timeline':
         grouped_posts = group_posts_by_date(posts, group_by)
+    elif group_by in ('day', 'month'):
+        grouped_feed = group_posts_by_date(posts, group_by)
 
     categories = Category.objects.all()
     context = {
@@ -38,6 +41,7 @@ def feed(request):
         'available_years': available_years,
         'view_type': view_type,
         'group_by': group_by,
+        'grouped_feed': grouped_feed,
     }
     return render(request, 'feed.html', context)
 
@@ -66,7 +70,7 @@ def group_posts_by_date(posts, group_by='month'):
 def add_category(request):
     if request.method == 'POST':
         name = (request.POST.get('name') or '').strip()
-        icon = (request.POST.get('icon') or '🎓').strip() or '🎓'
+        icon = (request.POST.get('icon') or '').strip()
 
         if name:
             category, created = Category.objects.get_or_create(name=name, defaults={'icon': icon})

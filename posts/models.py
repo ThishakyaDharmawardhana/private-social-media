@@ -7,7 +7,7 @@ User = get_user_model()
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    icon = models.CharField(max_length=10, default='🎓')
+    icon = models.CharField(max_length=10, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -15,7 +15,8 @@ class Category(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return f"{self.icon} {self.name}"
+        icon_part = f"{self.icon} " if self.icon else ""
+        return f"{icon_part}{self.name}"
 
 
 class Post(models.Model):

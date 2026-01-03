@@ -14,4 +14,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 7860
 
-CMD ["gunicorn", "yourprojectname.wsgi:application", "--bind", "0.0.0.0:7860"]
+CMD ["gunicorn", "PRIVATE_SOCIAL_MEDIA.wsgi:application", "--bind", "0.0.0.0:7860"]
